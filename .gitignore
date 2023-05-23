@@ -1,0 +1,8 @@
+dans_test
+dans_test.exe
+out.log
+nohup.out
+vendor
+go.mod
+go.sum
+.idea/
