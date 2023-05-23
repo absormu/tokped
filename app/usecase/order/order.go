@@ -18,51 +18,94 @@ func GetOrderHistory(c echo.Context, extractToken entity.ExtractToken) (e error)
 
 	idStr := c.Param("id")
 
-	var order entity.OrderHistory
-	if order, e = repoorder.GetOrderHistory(c, idStr); e != nil {
+	var orders []entity.OrderHistory
+	if orders, e = repoorder.GetOrderHistory(c, idStr); e != nil {
 		logger.WithField("error", e.Error()).Error("Catch error failure query GetOrderHistory")
 		e = resp.CustomError(c, http.StatusInternalServerError, sdk.ERR_DATABASE,
 			lg.Language{Bahasa: "Failure query get order ID", English: "Failure query get order ID"}, nil, nil)
 		return
 	}
 
-	if order.OrderNo == "" {
+	if len(orders) == 0 {
 		logger.Error("Catch error order history not found")
 		e = resp.CustomError(c, http.StatusNotFound, sdk.ERR_UNAUTHORIZED,
 			lg.Language{Bahasa: "Order history tidak tersedia", English: "Order history not found"}, nil, nil)
 		return
 	}
 
+	var orderDetailData []entity.OrderDetail
+	var orderDetail entity.OrderDetail
+	var orderNo, buyerName, sellerName, shippingName, shippingPhone, shippingAddress string
+	var logisticID, logisticName, paymentMethodID, paymentMethodName, createdAt string
+	var buyerID, sellerID, logisticShippingCost int
+	var totalQuantity, totalWeight, totalProductAmount, totalShoppingAmount, totalServiceCharge, totalAmount int
+
+	for _, order := range orders {
+		orderNo = order.OrderNo
+		buyerID = order.Buyer.ID
+		buyerName = order.Buyer.Name
+
+		sellerID = order.Seller.ID
+		sellerName = order.Seller.Name
+
+		shippingName = order.Shipping.Name
+		shippingPhone = order.Shipping.Phone
+		shippingAddress = order.Shipping.Address
+
+		orderDetail.ProductName = order.OrderDetails.ProductName
+		orderDetail.Quantity = order.OrderDetails.Quantity
+		orderDetail.ProductWeight = order.OrderDetails.ProductWeight
+		orderDetail.ProductPrice = order.OrderDetails.ProductPrice
+		orderDetail.TotalAmount = order.OrderDetails.TotalAmount
+
+		logisticID = order.Logistic.ID
+		logisticName = order.Logistic.Name
+		logisticShippingCost = order.Logistic.ShippingCost
+
+		paymentMethodID = order.PaymentMethod.ID
+		paymentMethodName = order.PaymentMethod.Name
+
+		totalQuantity = order.Total.Quantity
+		totalWeight = order.Total.Weight
+		totalProductAmount = order.Total.ProductAmount
+		totalShoppingAmount = order.Total.ShoppingAmount
+		totalServiceCharge = order.Total.ServiceCharge
+		totalAmount = order.Total.Amount
+
+		createdAt = order.CreatedAt
+
+		orderDetailData = append(orderDetailData, orderDetail)
+	}
+
 	var data entity.OrderHistoryData
-	data.OrderNo = order.OrderNo
+	data.OrderNo = orderNo
+	data.Buyer.ID = buyerID
+	data.Buyer.Name = buyerName
 
-	data.Buyer.ID = order.Buyer.ID
-	data.Buyer.Name = order.Buyer.Name
+	data.Seller.ID = sellerID
+	data.Seller.Name = sellerName
 
-	data.Seller.ID = order.Seller.ID
-	data.Seller.Name = order.Seller.Name
+	data.Shipping.Name = shippingName
+	data.Shipping.Phone = shippingPhone
+	data.Shipping.Address = shippingAddress
 
-	data.Shipping.Name = order.Shipping.Name
-	data.Shipping.Phone = order.Shipping.Phone
-	data.Shipping.Address = order.Shipping.Address
+	data.OrderDetails = orderDetailData
 
-	// "order_details": [
+	data.Logistic.ID = logisticID
+	data.Logistic.Name = logisticName
+	data.Logistic.ShippingCost = logisticShippingCost
 
-	data.Logistic.ID = order.Logistic.ID
-	data.Logistic.Name = order.Logistic.Name
-	data.Logistic.ShippingCost = order.Logistic.ShippingCost
+	data.PaymentMethod.ID = paymentMethodID
+	data.PaymentMethod.Name = paymentMethodName
 
-	data.PaymentMethod.ID = order.PaymentMethod.ID
-	data.PaymentMethod.Name = order.PaymentMethod.Name
+	data.Total.Quantity = totalQuantity
+	data.Total.Weight = totalWeight
+	data.Total.ProductAmount = totalProductAmount
+	data.Total.ShoppingAmount = totalShoppingAmount
+	data.Total.ServiceCharge = totalServiceCharge
+	data.Total.Amount = totalAmount
 
-	data.Total.Quantity = order.Total.Quantity
-	data.Total.Weight = order.Total.Weight
-	data.Total.ProductAmount = order.Total.ProductAmount
-	data.Total.ShoppingAmount = order.Total.ShoppingAmount
-	data.Total.ServiceCharge = order.Total.ServiceCharge
-	data.Total.Amount = order.Total.Amount
-
-	data.CreatedAt = order.CreatedAt
+	data.CreatedAt = createdAt
 
 	e = resp.CustomError(c, http.StatusOK, sdk.ERR_SUCCESS,
 		lg.Language{Bahasa: "Sukses", English: "Success"}, nil, data)

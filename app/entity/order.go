@@ -5,7 +5,7 @@ type OrderHistory struct {
 	Seller        Seller        `json:"-"`
 	Buyer         Buyer         `json:"-"`
 	Shipping      Shipping      `json:"-"`
-	OrderDetails  []OrderDetail `json:"-"`
+	OrderDetails  OrderDetail   `json:"-"`
 	Logistic      Logistic      `json:"-"`
 	PaymentMethod PaymentMethod `json:"-"`
 	Total         Total         `json:"-"`
